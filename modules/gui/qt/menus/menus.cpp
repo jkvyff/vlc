@@ -429,14 +429,42 @@ void VLCMenuBar::AudioMenu( qt_intf_t *p_intf, QMenu * current )
     }
 }
 
+/* Menu icons are drawn in #212121 (or #000) or with the #FF00FF placeholder: tint them all to the
+ * menu's text colour, like the playback entries */
+static QIcon menuIcon( const QString& path, const QWidget *menu )
+{
+    const QColor text = menu->palette().text().color();
+    const QString hex = text.name( QColor::HexRgb );
+    return ColorizedSvgIcon( path, text, {}, {}, { { QStringLiteral( "#212121" ), hex },
+                                                  { QStringLiteral( "\"#000\"" ), "\"" + hex + "\"" } } );
+}
+
+/* The hovered row uses the redesign's selected colours instead of the style's (often white) highlight.
+ * Popups are windows, which don't inherit palettes, so every submenu gets it too. */
+static void applyMenuHighlight( QMenu *menu )
+{
+    QList<QMenu *> menus = menu->findChildren<QMenu *>();
+    menus.prepend( menu );
+    for( QMenu *m : menus )
+    {
+        QPalette palette = m->palette();
+        const bool dark = palette.color( QPalette::Window ).lightness() < 128;
+        palette.setColor( QPalette::Highlight, dark ? QColor( 0x33, 0x33, 0x33 ) : QColor( 0xd5, 0xd5, 0xd5 ) );
+        palette.setColor( QPalette::HighlightedText, dark ? QColor( 0xea, 0xea, 0xea ) : QColor( 0x1f, 0x1f, 0x1f ) );
+        m->setPalette( palette );
+    }
+}
+
 /* Subtitles */
 void VLCMenuBar::SubtitleMenu( qt_intf_t *p_intf, QMenu *current, bool b_popup )
 {
     if( current->isEmpty() || b_popup )
     {
-        addDPStaticEntry( current, qtr( "Add &Subtitle File..." ), "",
+        QAction *action = addDPStaticEntry( current, qtr( "Add &Subtitle File..." ), "",
                 &DialogsProvider::loadSubtitlesFile);
-        current->addMenu(new CheckableListMenu(qtr( "Sub &Track" ), THEMIM->getSubtitleTracks(), QActionGroup::ExclusionPolicy::ExclusiveOptional, current));
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_document_add_24_regular.svg" ), current ) );
+        action = current->addMenu(new CheckableListMenu(qtr( "Sub &Track" ), THEMIM->getSubtitleTracks(), QActionGroup::ExclusionPolicy::ExclusiveOptional, current));
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_audiosub.svg" ), current ) );
         current->addSeparator();
     }
 }
@@ -617,7 +645,9 @@ void VLCMenuBar::PopupMenuPlaylistEntries( QMenu *menu, qt_intf_t *p_intf )
     connect( THEMPL, &PlaylistController::isEmptyChanged, nextAction, &QAction::setDisabled);
 
     action = menu->addAction( qtr( "Record" ), THEMIM, &PlayerController::toggleRecord );
-    action->setIcon( QIcon( ":/menu/ic_fluent_record.svg" ) );
+    /* record stays red, like record buttons everywhere; its SVG is not a colorizer placeholder */
+    action->setIcon( ColorizedSvgIcon( QStringLiteral( ":/menu/ic_fluent_record.svg" ), {}, {}, {},
+                                       { { QStringLiteral( "#f0f" ), QStringLiteral( "#e5332a" ) } } ) );
     if( !hasInput )
         action->setEnabled( false );
     menu->addSeparator();
@@ -695,7 +725,7 @@ void VLCMenuBar::PopupMenuStaticEntries( QMenu *menu )
         ":/menu/network.svg", &DialogsProvider::openNetDialog);
     addDPStaticEntry( openmenu, qtr( "Open &Capture Device..." ),
         ":/menu/capture-card.svg", &DialogsProvider::openCaptureDialog);
-    menu->addMenu( openmenu );
+    menu->addMenu( openmenu )->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_document_add_24_regular.svg" ), menu ) );
 
     menu->addSeparator();
 
@@ -762,7 +792,9 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         /* Add a fullscreen switch button, since it is the most used function */
         if( p_vout )
         {
-            menu->addAction(new BooleanPropertyAction(qtr( "&Fullscreen" ), THEMIM, "fullscreen", menu) );
+            action = new BooleanPropertyAction(qtr( "&Fullscreen" ), THEMIM, "fullscreen", menu);
+            action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_full_screen_maximize.svg" ), menu ) );
+            menu->addAction( action );
             menu->addSeparator();
         }
 
@@ -773,6 +805,7 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         AudioMenu( p_intf, submenu );
         action = menu->addMenu( submenu );
         action->setText( qtr( "&Audio" ) );
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_music_note_2.svg" ), menu ) );
         if( action->menu()->isEmpty() )
             action->setEnabled( false );
 
@@ -781,6 +814,7 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         VideoMenu( p_intf, submenu );
         action = menu->addMenu( submenu );
         action->setText( qtr( "&Video" ) );
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_filmstrip.svg" ), menu ) );
         if( action->menu()->isEmpty() )
             action->setEnabled( false );
 
@@ -789,12 +823,14 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         SubtitleMenu( p_intf, submenu, true );
         action = menu->addMenu( submenu );
         action->setText( qtr( "Subti&tle") );
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_audiosub.svg" ), menu ) );
 
         /* Playback menu for chapters */
         submenu = new QMenu( menu );
         NavigMenu( p_intf, submenu );
         action = menu->addMenu( submenu );
         action->setText( qtr( "&Playback" ) );
+        action->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_play.svg" ), menu ) );
         if( action->menu()->isEmpty() )
             action->setEnabled( false );
     }
@@ -839,11 +875,11 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         {
             QMenu* toolsMenu = new QMenu( qtr( "Tool&s" ), menu );
             ToolsMenu( p_intf, toolsMenu );
-            menu->addMenu( toolsMenu );
+            menu->addMenu( toolsMenu )->setIcon( menuIcon( QStringLiteral( ":/menu/ic_fluent_options.svg" ), menu ) );
 
             QMenu* viewMenu = new QMenu( qtr( "V&iew" ), menu );
             ViewMenu( p_intf, viewMenu );
-            menu->addMenu( viewMenu );
+            menu->addMenu( viewMenu )->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_panel_left_48_regular.svg" ), menu ) );
         }
     }
 
@@ -853,19 +889,21 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
 
         QMenu* openmenu = new QMenu( qtr( "Open Media" ), menu );
         FileMenu( p_intf, openmenu );
-        menu->addMenu( openmenu );
+        menu->addMenu( openmenu )->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_document_add_24_regular.svg" ), menu ) );
 
         menu->addSeparator();
 
         QMenu* helpmenu = new QMenu( qtr( "Help" ), menu );
         HelpMenu( p_intf, helpmenu );
-        menu->addMenu( helpmenu );
+        menu->addMenu( helpmenu )->setIcon( menuIcon( QStringLiteral( ":/icons/ic_fluent_info.svg" ), menu ) );
 
         addDPStaticEntry( menu, qtr( "Quit" ), ":/menu/exit.svg",
                           &DialogsProvider::quit, "Ctrl+Q", QAction::QuitRole );
     }
     else
         PopupMenuStaticEntries( menu );
+
+    applyMenuHighlight( menu );
 
     if( show )
         menu->popup( QCursor::pos() );

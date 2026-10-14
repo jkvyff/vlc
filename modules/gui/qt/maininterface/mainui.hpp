@@ -21,6 +21,7 @@
 #include <QMessageBox>
 
 class VLCVarChoiceModel;
+class SeekPreview;
 
 class MainUI : public QObject
 {
@@ -44,6 +45,7 @@ private:
     qt_intf_t* m_intf = nullptr;
     MainCtx* m_mainCtx = nullptr;
     QWindow*       m_interfaceWindow = nullptr;
+    SeekPreview* m_seekPreview = nullptr;
 
     QPointer<QQmlComponent> m_component;
     QQuickItem* m_rootItem = nullptr;

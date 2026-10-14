@@ -29,6 +29,7 @@
 #include "player/control_list_model.hpp"
 #include "player/control_list_filter.hpp"
 #include "player/delay_estimator.hpp"
+#include "player/seek_preview.hpp"
 
 #include "dialogs/toolbar/controlbar_profile_model.hpp"
 #include "dialogs/toolbar/controlbar_profile.hpp"
@@ -60,6 +61,7 @@
 
 #include "dialogs/help/aboutmodel.hpp"
 #include "dialogs/dialogs_provider.hpp"
+#include "dialogs/preferences/redesign_preferences.hpp"
 #include "dialogs/dialogs/dialogmodel.hpp"
 #ifdef UPDATE_CHECK
 #include "dialogs/help/help.hpp" // UpdateModel
@@ -105,6 +107,8 @@ MainUI::MainUI(qt_intf_t *p_intf, MainCtx *mainCtx, QWindow* interfaceWindow,  Q
     assert(m_intf);
     assert(m_mainCtx);
     assert(m_interfaceWindow);
+
+    m_seekPreview = new SeekPreview(m_intf, m_intf->p_mainPlayerController, this);
 
     registerQMLTypes();
 
@@ -163,6 +167,7 @@ bool MainUI::setup(QQmlEngine* engine)
         new EffectsImageProvider(engine);
     engine->addImageProvider(QStringLiteral("svgcolor"), new SVGColorImageImageProvider());
     engine->addImageProvider(QStringLiteral("vlcaccess"), new VLCAccessImageProvider());
+    engine->addImageProvider(QStringLiteral("seekpreview"), m_seekPreview->createImageProvider());
 
     m_component  = new QQmlComponent(engine, QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml"), QQmlComponent::PreferSynchronous, engine);
     if (m_component->isLoading())
@@ -272,6 +277,7 @@ void MainUI::registerQMLTypes()
         const int versionMinor = 0;
 
         // @uri VLC.Dialogs
+        qmlRegisterType<RedesignPreferences>(uri, versionMajor, versionMinor, "RedesignPreferences");
         qmlRegisterType<VLCDialog>( uri, versionMajor, versionMinor, "VLCDialog" );
         assert(VLCDialogModel::getInstance<false>());
         qmlRegisterSingletonInstance<VLCDialogModel>(uri, versionMajor, versionMinor, "VLCDialogModel", VLCDialogModel::getInstance<false>());
@@ -314,6 +320,7 @@ void MainUI::registerQMLTypes()
         qmlRegisterUncreatableType<ProgramListModel>(uri, versionMajor, versionMinor, "ProgramListModel", "available programs of a media" );
         assert(m_intf->p_mainPlayerController);
         qmlRegisterSingletonInstance<PlayerController>(uri, versionMajor, versionMinor, "Player", m_intf->p_mainPlayerController);
+        qmlRegisterSingletonInstance<SeekPreview>(uri, versionMajor, versionMinor, "SeekPreview", m_seekPreview);
         qmlRegisterTypesAndRevisions<TimedText>(uri, versionMajor);
         qmlRegisterType<PlayerHighResolutionTimeUpdater>(uri, versionMajor, versionMinor, "HighResolutionTimeUpdater");
         qmlRegisterUncreatableMetaObject(VLCTickForeign::staticMetaObject, uri, versionMajor, versionMinor, "VLCTick", "Not Instantiable" );

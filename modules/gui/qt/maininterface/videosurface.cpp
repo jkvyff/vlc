@@ -327,6 +327,15 @@ void VideoSurface::itemChange(ItemChange change, const ItemChangeData &value)
                 // Connection is made in `::updatePaintNode()` (which is called when both the item is visible and `ItemHasContents` is set).
                 disconnect(m_synchConnection);
             }
+            else
+            {
+                // A video enabled while hidden could not request its full synchronization (update() is a no-op
+                // then), leaving the compositor without the surface geometry until the next resize. Force one
+                // now, which also restores the synchronization connection in `::updatePaintNode()`:
+                m_videoEnabledChanged = true;
+                if (flags().testFlag(ItemHasContents))
+                    update();
+            }
             break;
         }
         default: break;

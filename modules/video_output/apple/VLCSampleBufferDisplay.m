@@ -928,14 +928,19 @@ API_AVAILABLE(tvos(17.0), visionos(1.0))
     VLCView *window = self.window;
     CGRect frame = CGRectMake(place->x, place->y, place->width, place->height);
 #if TARGET_OS_OSX
-    frame = [window convertRectFromBacking:frame];
-    frame.origin.y = window.bounds.size.height - frame.origin.y - frame.size.height;
+    CGFloat scale = window.window.backingScaleFactor ?: 1.0;
 #else
     CGFloat scale = window.contentScaleFactor;
+#endif
     frame.origin.x /= scale;
     frame.origin.y /= scale;
     frame.size.width /= scale;
     frame.size.height /= scale;
+#if TARGET_OS_OSX
+    /* vout places are top-left based: only unflipped hosts need converting
+     * (Qt's QNSView, for instance, is flipped) */
+    if (!window.isFlipped)
+        frame.origin.y = window.bounds.size.height - frame.origin.y - frame.size.height;
 #endif
     return frame;
 }
@@ -958,6 +963,12 @@ API_AVAILABLE(tvos(17.0), visionos(1.0))
 
         displayView = [[VLCSampleBufferDisplayView alloc] init];
         spuView = [VLCSampleBufferSubpictureView new];
+#if TARGET_OS_OSX
+        /* letterbox around the placed video; hosts such as Qt's QNSView
+         * would otherwise show their own (white) background */
+        if (window.layer)
+            window.layer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
+#endif
         [window addSubview:displayView];
         [window addSubview:spuView];
         [sys.displayModeMatcher prepare];

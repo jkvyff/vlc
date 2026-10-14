@@ -145,6 +145,9 @@ libqt_plugin_la_SOURCES = \
 	dialogs/preferences/expert_model.hpp \
 	dialogs/preferences/expert_view.cpp \
 	dialogs/preferences/expert_view.hpp \
+	dialogs/preferences/redesign_preferences.cpp \
+	dialogs/preferences/redesign_preferences.hpp \
+	dialogs/preferences/interface_languages.hpp \
 	dialogs/preferences/preferences.cpp \
 	dialogs/preferences/preferences.hpp \
 	dialogs/preferences/preferences_widgets.cpp \
@@ -290,6 +293,7 @@ libqt_plugin_la_SOURCES = \
 	player/delay_estimator.cpp \
 	player/delay_estimator.hpp \
 	player/player_controller.cpp player/player_controller.hpp player/player_controller_p.hpp \
+	player/seek_preview.cpp player/seek_preview.hpp \
 	player/player_controlbar_model.cpp player/player_controlbar_model.hpp \
 	player/control_list_model.cpp player/control_list_model.hpp \
 	player/control_list_filter.cpp \
@@ -432,6 +436,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	dialogs/preferences/complete_preferences.moc.cpp \
 	dialogs/preferences/expert_model.moc.cpp \
 	dialogs/preferences/expert_view.moc.cpp \
+	dialogs/preferences/redesign_preferences.moc.cpp \
 	dialogs/preferences/preferences.moc.cpp \
 	dialogs/preferences/preferences_widgets.moc.cpp \
 	dialogs/preferences/simple_preferences.moc.cpp \
@@ -492,6 +497,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	player/delay_estimator.moc.cpp \
 	player/input_models.moc.cpp \
 	player/player_controller.moc.cpp \
+	player/seek_preview.moc.cpp \
 	player/player_controlbar_model.moc.cpp \
 	player/control_list_model.moc.cpp \
 	player/control_list_filter.moc.cpp \
@@ -1167,6 +1173,33 @@ libqml_module_player_a_CXXFLAGS = $(libqt_plugin_la_CXXFLAGS)
 libqml_module_player_a_CPPFLAGS = $(libqt_plugin_la_CPPFLAGS)
 libqml_module_player_a_QML = \
 	player/qml/ControlBar.qml \
+	player/qml/redesign/RedesignBookmarks.qml \
+	player/qml/redesign/RedesignQueuePanel.qml \
+	player/qml/redesign/RedesignLibrary.qml \
+	player/qml/redesign/RedesignPlayer.qml \
+	player/qml/redesign/RedesignPreferencesCatalog.qml \
+	player/qml/redesign/RedesignPreferenceRow.qml \
+	player/qml/redesign/RedesignPreferencesWindow.qml \
+	player/qml/redesign/RedesignSettingSlider.qml \
+	player/qml/redesign/RedesignToggle.qml \
+	player/qml/redesign/RedesignDropdown.qml \
+	player/qml/redesign/RedesignSegmented.qml \
+	player/qml/redesign/RedesignInfoButton.qml \
+	player/qml/redesign/RedesignIcons.js \
+	player/qml/redesign/RedesignSettings.qml \
+	player/qml/redesign/RedesignTrackPanel.qml \
+	player/qml/redesign/RedesignPanelTabs.qml \
+	player/qml/redesign/RedesignChoiceDropdown.qml \
+	player/qml/redesign/RedesignTracks.qml \
+	player/qml/redesign/RedesignButton.qml \
+	player/qml/redesign/RedesignIcon.qml \
+	player/qml/redesign/RedesignLibraryView.qml \
+	player/qml/redesign/RedesignMenu.qml \
+	player/qml/redesign/RedesignPlayerView.qml \
+	player/qml/redesign/RedesignQueue.qml \
+	player/qml/redesign/RedesignSeekBar.qml \
+	player/qml/redesign/RedesignTheme.qml \
+	player/qml/redesign/RedesignVolume.qml \
 	player/qml/PlaybackSpeed.qml \
 	player/qml/LyricsFlickable.qml \
 	player/qml/MiniPlayer.qml \
@@ -1892,7 +1925,7 @@ qml_test_CXXFLAGS = $(AM_CXXFLAGS) $(QT_CFLAGS) -fPIC $(CXXFLAGS_qt) ${QT_QUICK_
 qml_test_LDADD = $(QT_INDIRECT_LIBS) ${QT_QUICK_TEST_LIBS} $(QT_LIBS) $(LIBS_qt) libqml_module_util.a
 qml_test_LDFLAGS = $(AM_LDFLAGS) $(QT_QUICK_TEST_LDFLAGS)
 check_PROGRAMS += qml_test
-EXTRA_DIST += tests/tst_FSM.qml
-TESTS += tests/tst_FSM.qml
+EXTRA_DIST += tests/tst_FSM.qml tests/tst_Redesign.qml tests/tst_RedesignPreferences.qml
+TESTS += tests/tst_FSM.qml tests/tst_Redesign.qml tests/tst_RedesignPreferences.qml
 endif
 endif

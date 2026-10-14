@@ -160,6 +160,10 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
 
     settings = getSettings();
     m_colorScheme = new ColorSchemeModel(this);
+    connect(m_colorScheme, &ColorSchemeModel::currentChanged, this, [this]() {
+        settings->setValue(QStringLiteral("MainWindow/color-scheme-index"), m_colorScheme->currentIndex());
+        settings->sync();
+    });
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     connect(m_colorScheme, &ColorSchemeModel::currentChanged, qGuiApp, [colorScheme = m_colorScheme]() {
@@ -412,8 +416,25 @@ void MainCtx::setWindowExtendedMargin(unsigned int margin) {
  *   Main UI handling        *
  *****************************/
 
+QVariantMap MainCtx::redesignPlayerPreferences() const
+{
+    return {{QStringLiteral("autoHide"), QVariant::fromValue<qlonglong>(config_GetInt("qt-controls-autohide"))},
+        {QStringLiteral("hideTimeout"), QVariant::fromValue<qlonglong>(config_GetInt("qt-controls-hide-timeout"))},
+        {QStringLiteral("fullscreenControls"), bool(config_GetInt("qt-fs-controller"))}};
+}
+
 void MainCtx::loadPrefs(const bool callSignals)
 {
+    if (callSignals) emit redesignPlayerPreferencesChanged();
+    char* accent = var_InheritString(p_intf, "qt-accent-color");
+    QColor color = accent && strcmp(accent, "default") && strcmp(accent, "system") ? QColor(qfu(accent)) : QColor(QStringLiteral("#d37918"));
+    free(accent);
+    if (!color.isValid()) color = QColor(QStringLiteral("#d37918"));
+    if (color != m_redesignAccent) {
+        m_redesignAccent = color;
+        if (callSignals) emit redesignAccentChanged();
+    }
+
     const auto loadFromVLCOption = [this, callSignals](auto &variable, const char *name
             , const std::function<void(MainCtx *)> signal)
     {
@@ -494,7 +515,7 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
 
     loadFromSettings(m_lyricsMode, "MainWindow/lyrics-mode", true, this, &MainCtx::lyricsModeChanged);
 
-    const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 0 ).toInt();
+    const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 2 ).toInt();
     m_colorScheme->setCurrentIndex(colorSchemeIndex);
 
     /* user interface scale factor */
